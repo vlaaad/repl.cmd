@@ -117,6 +117,10 @@ exit /b 1
 goto :run
 
 :append_line
+if "%~1"=="" (
+  >> "%OUTPUT_PATH%" echo(
+  exit /b 0
+)
 >> "%OUTPUT_PATH%" echo %~1
 exit /b 0
 
