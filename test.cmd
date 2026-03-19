@@ -6,12 +6,17 @@ BATCH
 set -eu
 
 OUTPUT_PATH=artifacts/test-output.txt
+LAUNCHER_SHELL=sh
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     -OutputPath)
       shift
       OUTPUT_PATH=${1-}
+      ;;
+    -LauncherShell)
+      shift
+      LAUNCHER_SHELL=${1-}
       ;;
     *)
       printf 'unknown argument: %s\n' "$1" >&2
@@ -44,7 +49,26 @@ append_result() {
 }
 
 run_repl() {
-  sh "$(dirname "$0")/repl.cmd" "$@"
+  cmdline='./repl.cmd'
+  for arg in "$@"; do
+    cmdline="$cmdline $arg"
+  done
+
+  case "$LAUNCHER_SHELL" in
+    sh|bash|zsh)
+      "$LAUNCHER_SHELL" -lc "$cmdline"
+      ;;
+    fish)
+      fish -c "$cmdline"
+      ;;
+    tcsh)
+      tcsh -f -c "$cmdline"
+      ;;
+    *)
+      printf 'unknown launcher shell: %s\n' "$LAUNCHER_SHELL" >&2
+      exit 1
+      ;;
+  esac
 }
 
 run_tests() {
@@ -76,7 +100,7 @@ run_tests() {
   assert_contains "$sketch_output" 'POSIX branch sketch:' 'missing POSIX sketch output'
   assert_contains "$sketch_output" 'Windows branch sketch:' 'missing Windows sketch output'
   append_result 'polyglot-runtime-sketch' \
-    'repl.cmd __sketch runs through the native shell on this OS' \
+    'repl.cmd __sketch can be launched from the configured shell entrypoint' \
     'the emitted sketch text is stable enough for cross-OS comparison'
 
   if status_output=$(run_repl status 2>&1); then
@@ -106,6 +130,11 @@ set "OUTPUT_PATH=artifacts/test-output.txt"
 if "%~1"=="" goto :dispatch
 if /I "%~1"=="-OutputPath" (
   set "OUTPUT_PATH=%~2"
+  shift
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="-LauncherShell" (
   shift
   shift
   goto :parse_args
@@ -167,7 +196,7 @@ findstr /c:"POSIX branch sketch:" "%REPL_OUT%" >nul || (echo missing POSIX sketc
 findstr /c:"Windows branch sketch:" "%REPL_OUT%" >nul || (echo missing Windows sketch output 1>&2 & exit /b 1)
 del "%REPL_OUT%"
 call :append_line "PASS polyglot-runtime-sketch" || exit /b 1
-call :append_line "  repl.cmd __sketch runs through the native shell on this OS" || exit /b 1
+call :append_line "  repl.cmd __sketch can be launched from the configured shell entrypoint" || exit /b 1
 call :append_line "  the emitted sketch text is stable enough for cross-OS comparison" || exit /b 1
 
 call :run_repl status || exit /b 1

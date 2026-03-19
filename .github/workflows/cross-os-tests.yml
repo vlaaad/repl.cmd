@@ -6,26 +6,57 @@ on:
 
 jobs:
   test:
-    name: Test (${{ matrix.os }})
+    name: Test (${{ matrix.os }} / ${{ matrix.launcher || 'windows-default' }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
+        include:
+          - os: ubuntu-latest
+            launcher: sh
+          - os: ubuntu-latest
+            launcher: bash
+          - os: ubuntu-latest
+            launcher: zsh
+          - os: ubuntu-latest
+            launcher: fish
+          - os: ubuntu-latest
+            launcher: tcsh
+          - os: macos-latest
+            launcher: sh
+          - os: macos-latest
+            launcher: bash
+          - os: macos-latest
+            launcher: zsh
+          - os: macos-latest
+            launcher: fish
+          - os: macos-latest
+            launcher: tcsh
+          - os: windows-latest
 
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install Linux shells
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh fish tcsh
+
+      - name: Install macOS shells
+        if: runner.os == 'macOS'
+        run: brew install fish
+
       - name: Run contract tests
-        run: ./test.cmd -OutputPath artifacts/test-output.txt
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ./test.cmd -OutputPath artifacts/test-output.txt
+          else
+            sh ./test.cmd -OutputPath artifacts/test-output.txt -LauncherShell "${{ matrix.launcher }}"
+          fi
 
       - name: Upload normalized transcript
         uses: actions/upload-artifact@v7
         with:
-          name: test-output-${{ matrix.os }}
+          name: test-output-${{ matrix.os }}-${{ matrix.launcher || 'windows-default' }}
           path: artifacts/test-output.txt
           if-no-files-found: error
 
