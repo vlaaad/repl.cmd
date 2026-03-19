@@ -45,13 +45,15 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install fish
 
-      - name: Run contract tests
-        run: |
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            ./test.cmd -OutputPath artifacts/test-output.txt
-          else
-            sh ./test.cmd -OutputPath artifacts/test-output.txt -LauncherShell "${{ matrix.launcher }}"
-          fi
+      - name: Run contract tests (POSIX)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: sh ./test.cmd -OutputPath artifacts/test-output.txt -LauncherShell "${{ matrix.launcher }}"
+
+      - name: Run contract tests (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./test.cmd -OutputPath artifacts/test-output.txt
 
       - name: Upload normalized transcript
         uses: actions/upload-artifact@v7
