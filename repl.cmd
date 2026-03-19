@@ -6,16 +6,16 @@ BATCH
 set -eu
 
 state_dir() {
-  if [ "${REPLCTL_STATE_DIR-}" != "" ]; then
-    REPLCTL_STATE=$REPLCTL_STATE_DIR
+  if [ "${REPL_CMD_STATE_DIR-}" != "" ]; then
+    REPL_CMD_STATE=$REPL_CMD_STATE_DIR
   else
-    REPLCTL_STATE="${TMPDIR:-/tmp}/replctl-sketch"
+    REPL_CMD_STATE="${TMPDIR:-/tmp}/repl.cmd-sketch"
   fi
 }
 
 usage() {
   cat <<'EOF'
-replctl sketch
+repl.cmd sketch
 
   repl.cmd start -- <repl command...>
   repl.cmd eval "(+ 1 2)"
@@ -27,16 +27,16 @@ EOF
 }
 
 write_metadata() {
-  cat >"$REPLCTL_STATE/metadata.txt" <<EOF
+  cat >"$REPL_CMD_STATE/metadata.txt" <<EOF
 protocol-version: 1
 backend-command: $1
-state-dir: $REPLCTL_STATE
+state-dir: $REPL_CMD_STATE
 EOF
 }
 
 queue_eval() {
   reqid="$(date +%s)-$$"
-  cat >"$REPLCTL_STATE/requests/$reqid.req" <<EOF
+  cat >"$REPL_CMD_STATE/requests/$reqid.req" <<EOF
 request-id: $reqid
 op: eval
 form: $1
@@ -47,7 +47,7 @@ EOF
 
 queue_stop() {
   reqid="stop-$(date +%s)-$$"
-  cat >"$REPLCTL_STATE/requests/$reqid.req" <<EOF
+  cat >"$REPL_CMD_STATE/requests/$reqid.req" <<EOF
 request-id: $reqid
 op: stop
 EOF
@@ -56,7 +56,7 @@ EOF
 
 broker() {
   state_dir
-  printf 'broker sketch running in "%s"\n\n' "$REPLCTL_STATE"
+  printf 'broker sketch running in "%s"\n\n' "$REPL_CMD_STATE"
   cat <<'EOF'
 TODO broker flow:
   1. launch child repl with redirected stdin/stdout/stderr
@@ -88,17 +88,17 @@ Wrapped eval shape:
   <end:<request-id>>
 
 POSIX branch sketch:
-  state_dir="${TMPDIR:-/tmp}/replctl-sketch"
+  state_dir="${TMPDIR:-/tmp}/repl.cmd-sketch"
   mkdir -p "$state_dir/requests" "$state_dir/responses" "$state_dir/logs"
   sh "$0" __broker >/dev/null 2>&1 &
   printf 'request-id: %s\nop: eval\nform: %s\n' "$id" "$form" > "$state_dir/requests/$id.req"
   while :; do scan request files; done
 
 Windows branch sketch:
-  set "REPLCTL_STATE=%TEMP%\replctl-sketch"
-  if not exist "%REPLCTL_STATE%\requests" mkdir "%REPLCTL_STATE%\requests"
-  start "replctl-broker" /b cmd /c ""%~f0" __broker"
-  >"%REPLCTL_STATE%\requests\%REQID%.req" echo request-id: %REQID%
+  set "REPL_CMD_STATE=%TEMP%\repl.cmd-sketch"
+  if not exist "%REPL_CMD_STATE%\requests" mkdir "%REPL_CMD_STATE%\requests"
+  start "repl.cmd-broker" /b cmd /c ""%~f0" __broker"
+  >"%REPL_CMD_STATE%\requests\%REQID%.req" echo request-id: %REQID%
 EOF
 }
 
@@ -115,7 +115,7 @@ case "$cmd" in
       exit 1
     fi
     shift 2
-    mkdir -p "$REPLCTL_STATE/requests" "$REPLCTL_STATE/responses" "$REPLCTL_STATE/logs"
+    mkdir -p "$REPL_CMD_STATE/requests" "$REPL_CMD_STATE/responses" "$REPL_CMD_STATE/logs"
     repl_cmd=$1
     shift
     if [ "$#" -gt 0 ]; then
@@ -123,7 +123,7 @@ case "$cmd" in
     fi
     write_metadata "$repl_cmd"
     sh "$0" __broker >/dev/null 2>&1 &
-    printf 'started broker sketch in "%s"\n' "$REPLCTL_STATE"
+    printf 'started broker sketch in "%s"\n' "$REPL_CMD_STATE"
     ;;
   eval)
     state_dir
@@ -131,22 +131,22 @@ case "$cmd" in
       printf '%s\n' 'expected form payload' >&2
       exit 1
     fi
-    mkdir -p "$REPLCTL_STATE/requests"
+    mkdir -p "$REPL_CMD_STATE/requests"
     queue_eval "$2"
     ;;
   stop)
     state_dir
-    mkdir -p "$REPLCTL_STATE/requests"
+    mkdir -p "$REPL_CMD_STATE/requests"
     queue_stop
     ;;
   status)
     state_dir
-    if [ ! -f "$REPLCTL_STATE/metadata.txt" ]; then
+    if [ ! -f "$REPL_CMD_STATE/metadata.txt" ]; then
       printf '%s\n' 'stopped'
       exit 1
     fi
-    printf 'state-dir: %s\n' "$REPLCTL_STATE"
-    cat "$REPLCTL_STATE/metadata.txt"
+    printf 'state-dir: %s\n' "$REPL_CMD_STATE"
+    cat "$REPL_CMD_STATE/metadata.txt"
     ;;
   __broker)
     broker
@@ -164,7 +164,7 @@ esac
 exit 0
 
 :usage
-echo replctl sketch
+echo repl.cmd sketch
 echo.
 echo   repl.cmd start -- ^<repl command...^>
 echo   repl.cmd eval "(+ 1 2)"
@@ -178,16 +178,16 @@ exit /b 0
 exit /b 1
 
 :state_dir
-if defined REPLCTL_STATE_DIR (
-  set "REPLCTL_STATE=%REPLCTL_STATE_DIR%"
+if defined REPL_CMD_STATE_DIR (
+  set "REPL_CMD_STATE=%REPL_CMD_STATE_DIR%"
 ) else (
-  set "REPLCTL_STATE=%TEMP%\replctl-sketch"
+  set "REPL_CMD_STATE=%TEMP%\repl.cmd-sketch"
 )
 exit /b 0
 
 :broker
 call :state_dir
-echo broker sketch running in "%REPLCTL_STATE%"
+echo broker sketch running in "%REPL_CMD_STATE%"
 echo.
 echo TODO broker flow:
 echo   1. launch child repl with redirected stdin/stdout/stderr
@@ -217,17 +217,17 @@ echo   ^<value:^<edn-or-pr-str^>^>
 echo   ^<end:^<request-id^>^>
 echo.
 echo POSIX branch sketch:
-echo   state_dir="${TMPDIR:-/tmp}/replctl-sketch"
+echo   state_dir="${TMPDIR:-/tmp}/repl.cmd-sketch"
 echo   mkdir -p "$state_dir/requests" "$state_dir/responses" "$state_dir/logs"
 echo   sh "$0" __broker ^>/dev/null 2^>^&1 ^&
 echo   printf 'request-id: %%s\nop: eval\nform: %%s\n' "$id" "$form" ^> "$state_dir/requests/$id.req"
 echo   while :; do scan request files; done
 echo.
 echo Windows branch sketch:
-echo   set "REPLCTL_STATE=%%TEMP%%\replctl-sketch"
-echo   if not exist "%%REPLCTL_STATE%%\requests" mkdir "%%REPLCTL_STATE%%\requests"
-echo   start "replctl-broker" /b cmd /c ""%%~f0" __broker"
-echo   ^>"%%REPLCTL_STATE%%\requests\%%REQID%%.req" echo request-id: %%REQID%%
+echo   set "REPL_CMD_STATE=%%TEMP%%\repl.cmd-sketch"
+echo   if not exist "%%REPL_CMD_STATE%%\requests" mkdir "%%REPL_CMD_STATE%%\requests"
+echo   start "repl.cmd-broker" /b cmd /c ""%%~f0" __broker"
+echo   ^>"%%REPL_CMD_STATE%%\requests\%%REQID%%.req" echo request-id: %%REQID%%
 exit /b 0
 
 :windows
@@ -248,19 +248,19 @@ if not "%~2"=="--" (
   echo expected -- before repl command 1>&2
   exit /b 1
 )
-if not exist "%REPLCTL_STATE%" mkdir "%REPLCTL_STATE%"
-if not exist "%REPLCTL_STATE%\requests" mkdir "%REPLCTL_STATE%\requests"
-if not exist "%REPLCTL_STATE%\responses" mkdir "%REPLCTL_STATE%\responses"
-if not exist "%REPLCTL_STATE%\logs" mkdir "%REPLCTL_STATE%\logs"
-set "REPLCTL_CMD=%~3"
-if not "%~4"=="" set "REPLCTL_CMD=%REPLCTL_CMD% %~4 [and more]"
->"%REPLCTL_STATE%\metadata.txt" (
+if not exist "%REPL_CMD_STATE%" mkdir "%REPL_CMD_STATE%"
+if not exist "%REPL_CMD_STATE%\requests" mkdir "%REPL_CMD_STATE%\requests"
+if not exist "%REPL_CMD_STATE%\responses" mkdir "%REPL_CMD_STATE%\responses"
+if not exist "%REPL_CMD_STATE%\logs" mkdir "%REPL_CMD_STATE%\logs"
+set "REPL_CMD_CMD=%~3"
+if not "%~4"=="" set "REPL_CMD_CMD=%REPL_CMD_CMD% %~4 [and more]"
+>"%REPL_CMD_STATE%\metadata.txt" (
   echo protocol-version: 1
-  echo backend-command: %REPLCTL_CMD%
-  echo state-dir: %REPLCTL_STATE%
+  echo backend-command: %REPL_CMD_CMD%
+  echo state-dir: %REPL_CMD_STATE%
 )
-start "replctl-broker" /b cmd /c ""%~f0" __broker"
-echo started broker sketch in "%REPLCTL_STATE%"
+start "repl.cmd-broker" /b cmd /c ""%~f0" __broker"
+echo started broker sketch in "%REPL_CMD_STATE%"
 exit /b 0
 
 :eval
@@ -269,9 +269,9 @@ if "%~2"=="" (
   echo expected form payload 1>&2
   exit /b 1
 )
-if not exist "%REPLCTL_STATE%\requests" mkdir "%REPLCTL_STATE%\requests"
+if not exist "%REPL_CMD_STATE%\requests" mkdir "%REPL_CMD_STATE%\requests"
 set "REQID=%RANDOM%%RANDOM%"
->"%REPLCTL_STATE%\requests\%REQID%.req" (
+>"%REPL_CMD_STATE%\requests\%REQID%.req" (
   echo request-id: %REQID%
   echo op: eval
   echo form: %~2
@@ -282,9 +282,9 @@ exit /b 0
 
 :stop
 call :state_dir
-if not exist "%REPLCTL_STATE%\requests" mkdir "%REPLCTL_STATE%\requests"
+if not exist "%REPL_CMD_STATE%\requests" mkdir "%REPL_CMD_STATE%\requests"
 set "REQID=stop-%RANDOM%%RANDOM%"
->"%REPLCTL_STATE%\requests\%REQID%.req" (
+>"%REPL_CMD_STATE%\requests\%REQID%.req" (
   echo request-id: %REQID%
   echo op: stop
 )
@@ -293,10 +293,10 @@ exit /b 0
 
 :status
 call :state_dir
-if not exist "%REPLCTL_STATE%\metadata.txt" (
+if not exist "%REPL_CMD_STATE%\metadata.txt" (
   echo stopped
   exit /b 1
 )
-echo state-dir: %REPLCTL_STATE%
-type "%REPLCTL_STATE%\metadata.txt"
+echo state-dir: %REPL_CMD_STATE%
+type "%REPL_CMD_STATE%\metadata.txt"
 exit /b 0

@@ -75,7 +75,7 @@ run_tests() {
   mkdir -p "$(dirname "$OUTPUT_PATH")"
   : > "$OUTPUT_PATH"
 
-  printf 'replctl test transcript v1\n' >> "$OUTPUT_PATH"
+  printf 'repl.cmd test transcript v1\n' >> "$OUTPUT_PATH"
   printf 'scope: contract scaffold\n' >> "$OUTPUT_PATH"
   printf 'note: these tests validate the polyglot interface sketch without extra runtimes\n\n' >> "$OUTPUT_PATH"
 
@@ -171,7 +171,7 @@ for %%D in ("%OUTPUT_PATH%") do set "OUTPUT_DIR=%%~dpD"
 if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
 break > "%OUTPUT_PATH%"
 
-call :append_line "replctl test transcript v1" || exit /b 1
+call :append_line "repl.cmd test transcript v1" || exit /b 1
 call :append_line "scope: contract scaffold" || exit /b 1
 call :append_line "note: these tests validate the polyglot interface sketch without extra runtimes" || exit /b 1
 call :append_line "" || exit /b 1
