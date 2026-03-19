@@ -1,0 +1,61 @@
+name: Cross-OS Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run contract tests
+        run: ./test.cmd -OutputPath artifacts/test-output.txt
+
+      - name: Upload normalized transcript
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output-${{ matrix.os }}
+          path: artifacts/test-output.txt
+          if-no-files-found: error
+
+  compare:
+    name: Compare outputs
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download transcripts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/outputs
+
+      - name: Require identical outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find artifacts/outputs -type f -name test-output.txt | sort)
+          if [ "${#files[@]}" -lt 2 ]; then
+            echo "need at least two test-output.txt artifacts to compare" >&2
+            exit 1
+          fi
+          ref="${files[0]}"
+          for candidate in "${files[@]:1}"; do
+            cmp -s "$ref" "$candidate" || {
+              echo "artifact mismatch: $ref vs $candidate" >&2
+              exit 1
+            }
+          done
+          echo "validated identical outputs across ${#files[@]} OS artifacts"
