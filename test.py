@@ -13,6 +13,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parent
 REPL = ROOT / "repl.cmd"
 PLAN = ROOT / "PLAN.md"
+EVAL_PAYLOAD = "user-form-payload"
 
 
 def normalize_newlines(text: str) -> str:
@@ -171,14 +172,14 @@ def run_tests(output_path: Path, launcher_shell: str | None) -> None:
         )
         append_block(lines, "OUTPUT status-after-start", running_text)
 
-        eval_result = run_repl(["eval", "(+ 1 2)"], launcher_shell, state_dir)
+        eval_result = run_repl(["eval", EVAL_PAYLOAD], launcher_shell, state_dir)
         if eval_result.returncode != 0:
             raise AssertionError(f"repl.cmd eval failed: {normalize_newlines(eval_result.stderr).strip()}")
         eval_text = normalize_runtime_text(eval_result.stdout + eval_result.stderr, state_dir)
         request_text = normalize_runtime_text(latest_request(state_dir), state_dir)
         assert_contains(eval_text, "queued request <request-id>", "missing queued eval output")
         assert_contains(request_text, "op: eval", "missing eval request file")
-        assert_contains(request_text, "form: (+ 1 2)", "missing eval payload")
+        assert_contains(request_text, f"form: {EVAL_PAYLOAD}", "missing eval payload")
         lines.extend(
             [
                 "PASS eval-command",
