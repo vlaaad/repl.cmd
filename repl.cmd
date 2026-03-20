@@ -15,7 +15,7 @@ state_dir() {
 
 usage() {
   cat <<'EOF'
-repl.cmd sketch
+repl.cmd
 
   repl.cmd start -- <repl command...>
   repl.cmd eval "(+ 1 2)"
@@ -69,39 +69,6 @@ TODO broker flow:
 EOF
 }
 
-sketch() {
-  cat <<'EOF'
-Common state layout:
-  metadata.txt
-  broker.pid
-  child.pid
-  lock
-  requests/*.req
-  responses/*.resp
-  logs/stdout.log
-  logs/stderr.log
-
-Wrapped eval shape:
-  <begin:<request-id>>
-  user form output
-  <value:<edn-or-pr-str>>
-  <end:<request-id>>
-
-POSIX branch sketch:
-  state_dir="${TMPDIR:-/tmp}/repl.cmd-sketch"
-  mkdir -p "$state_dir/requests" "$state_dir/responses" "$state_dir/logs"
-  sh "$0" __broker >/dev/null 2>&1 &
-  printf 'request-id: %s\nop: eval\nform: %s\n' "$id" "$form" > "$state_dir/requests/$id.req"
-  while :; do scan request files; done
-
-Windows branch sketch:
-  set "REPL_CMD_STATE=%TEMP%\repl.cmd-sketch"
-  if not exist "%REPL_CMD_STATE%\requests" mkdir "%REPL_CMD_STATE%\requests"
-  start "repl.cmd-broker" /b cmd /c ""%~f0" __broker >nul 2>&1"
-  >"%REPL_CMD_STATE%\requests\%REQID%.req" echo request-id: %REQID%
-EOF
-}
-
 cmd=${1-}
 
 case "$cmd" in
@@ -151,9 +118,6 @@ case "$cmd" in
   __broker)
     broker
     ;;
-  __sketch)
-    sketch
-    ;;
   *)
     printf 'unknown command: %s\n' "$cmd" >&2
     usage >&2
@@ -164,7 +128,7 @@ esac
 exit 0
 
 :usage
-echo repl.cmd sketch
+echo repl.cmd
 echo.
 echo   repl.cmd start -- ^<repl command...^>
 echo   repl.cmd eval "(+ 1 2)"
@@ -199,37 +163,6 @@ echo   6. write shell-friendly response file to responses
 echo   7. on stop, terminate child process tree and clean up state
 exit /b 0
 
-:sketch
-echo Common state layout:
-echo   metadata.txt
-echo   broker.pid
-echo   child.pid
-echo   lock
-echo   requests/*.req
-echo   responses/*.resp
-echo   logs/stdout.log
-echo   logs/stderr.log
-echo.
-echo Wrapped eval shape:
-echo   ^<begin:^<request-id^>^>
-echo   user form output
-echo   ^<value:^<edn-or-pr-str^>^>
-echo   ^<end:^<request-id^>^>
-echo.
-echo POSIX branch sketch:
-echo   state_dir="${TMPDIR:-/tmp}/repl.cmd-sketch"
-echo   mkdir -p "$state_dir/requests" "$state_dir/responses" "$state_dir/logs"
-echo   sh "$0" __broker ^>/dev/null 2^>^&1 ^&
-echo   printf 'request-id: %%s\nop: eval\nform: %%s\n' "$id" "$form" ^> "$state_dir/requests/$id.req"
-echo   while :; do scan request files; done
-echo.
-echo Windows branch sketch:
-echo   set "REPL_CMD_STATE=%%TEMP%%\repl.cmd-sketch"
-echo   if not exist "%%REPL_CMD_STATE%%\requests" mkdir "%%REPL_CMD_STATE%%\requests"
-echo   start "repl.cmd-broker" /b cmd /c ""%%~f0" __broker ^>nul 2^>^&1"
-echo   ^>"%%REPL_CMD_STATE%%\requests\%%REQID%%.req" echo request-id: %%REQID%%
-exit /b 0
-
 :windows
 if "%~1"=="" goto :usage
 if /I "%~1"=="start" goto :start
@@ -237,8 +170,6 @@ if /I "%~1"=="eval" goto :eval
 if /I "%~1"=="stop" goto :stop
 if /I "%~1"=="status" goto :status
 if /I "%~1"=="__broker" goto :broker
-if /I "%~1"=="__sketch" goto :sketch
-
 echo unknown command: %~1 1>&2
 goto :usage_error
 

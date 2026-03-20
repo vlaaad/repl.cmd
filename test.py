@@ -89,6 +89,8 @@ def run_tests(output_path: Path, launcher_shell: str | None) -> None:
     assert_contains(repl_source, ': <<"BATCH"', "missing polyglot batch shim")
     assert_contains(repl_source, 'case "$cmd" in', "missing POSIX command dispatch")
     assert_contains(repl_source, "goto :start", "missing Windows start dispatch")
+    if "__sketch" in repl_source:
+        raise AssertionError("unexpected sketch command in repl.cmd")
 
     plan_source = PLAN.read_text(encoding="utf-8")
     assert_contains(plan_source, "cross-platform", "plan must mention cross-platform support")
@@ -111,22 +113,6 @@ def run_tests(output_path: Path, launcher_shell: str | None) -> None:
 
     with tempfile.TemporaryDirectory(prefix="repl-cmd-test-") as temp_dir:
         state_dir = Path(temp_dir) / "state"
-
-        sketch = run_repl(["__sketch"], launcher_shell, state_dir)
-        if sketch.returncode != 0:
-            raise AssertionError(f"repl.cmd __sketch failed: {normalize_newlines(sketch.stderr).strip()}")
-        sketch_text = normalize_runtime_text(sketch.stdout, state_dir)
-        assert_contains(sketch_text, "Common state layout:", "missing common state layout output")
-        assert_contains(sketch_text, "POSIX branch sketch:", "missing POSIX sketch output")
-        assert_contains(sketch_text, "Windows branch sketch:", "missing Windows sketch output")
-        lines.extend(
-            [
-                "PASS polyglot-runtime-sketch",
-                "  repl.cmd __sketch can be launched from the configured entrypoint",
-                "  the emitted sketch text is stable enough for cross-OS comparison",
-            ]
-        )
-        append_block(lines, "OUTPUT __sketch", sketch_text)
 
         stopped = run_repl(["status"], launcher_shell, state_dir)
         stopped_text = normalize_runtime_text(stopped.stdout + stopped.stderr, state_dir)
