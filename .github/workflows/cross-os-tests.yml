@@ -37,6 +37,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
       - name: Install Linux shells
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y zsh fish tcsh
@@ -48,12 +53,12 @@ jobs:
       - name: Run contract tests (POSIX)
         if: runner.os != 'Windows'
         shell: bash
-        run: sh ./test.cmd -OutputPath artifacts/test-output.txt -LauncherShell "${{ matrix.launcher }}"
+        run: python ./test.py run --output-path artifacts/test-output.txt --launcher-shell "${{ matrix.launcher }}"
 
       - name: Run contract tests (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: ./test.cmd -OutputPath artifacts/test-output.txt
+        run: python ./test.py run --output-path artifacts/test-output.txt
 
       - name: Upload normalized transcript
         uses: actions/upload-artifact@v7
@@ -70,30 +75,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
       - name: Download transcripts
         uses: actions/download-artifact@v8
         with:
           path: artifacts/outputs
 
       - name: Require identical outputs
-        shell: bash
-        run: |
-          set -euo pipefail
-          mapfile -t files < <(find artifacts/outputs -type f -name test-output.txt | sort)
-          if [ "${#files[@]}" -lt 2 ]; then
-            echo "need at least two test-output.txt artifacts to compare" >&2
-            exit 1
-          fi
-          ref="$(mktemp)"
-          tr -d '\r' < "${files[0]}" > "$ref"
-          for candidate in "${files[@]:1}"; do
-            normalized_candidate="$(mktemp)"
-            tr -d '\r' < "$candidate" > "$normalized_candidate"
-            cmp -s "$ref" "$normalized_candidate" || {
-              echo "artifact mismatch: ${files[0]} vs $candidate" >&2
-              exit 1
-            }
-            rm -f "$normalized_candidate"
-          done
-          rm -f "$ref"
-          echo "validated identical outputs across ${#files[@]} OS artifacts"
+        run: python ./test.py compare --artifacts-root artifacts/outputs

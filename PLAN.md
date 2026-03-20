@@ -13,7 +13,7 @@ Build a cross-platform `repl.cmd` helper that manages a local REPL without netwo
 - Windows, macOS, and Linux
 - no TCP
 - `clj` / `lein` agnostic
-- shell-only implementation; no Python or extra runtimes
+- shell-only runtime implementation; tests may require Python in CI/dev
 - one polyglot script with Windows and POSIX branches
 
 ## Architecture
