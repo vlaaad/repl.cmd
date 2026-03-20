@@ -226,7 +226,7 @@ echo.
 echo Windows branch sketch:
 echo   set "REPL_CMD_STATE=%%TEMP%%\repl.cmd-sketch"
 echo   if not exist "%%REPL_CMD_STATE%%\requests" mkdir "%%REPL_CMD_STATE%%\requests"
-echo   start "repl.cmd-broker" /b cmd /c ""%%~f0" __broker"
+echo   start "repl.cmd-broker" /b cmd /c ""%%~f0" __broker ^>nul 2^>^&1"
 echo   ^>"%%REPL_CMD_STATE%%\requests\%%REQID%%.req" echo request-id: %%REQID%%
 exit /b 0
 
