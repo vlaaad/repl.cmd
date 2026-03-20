@@ -97,7 +97,7 @@ POSIX branch sketch:
 Windows branch sketch:
   set "REPL_CMD_STATE=%TEMP%\repl.cmd-sketch"
   if not exist "%REPL_CMD_STATE%\requests" mkdir "%REPL_CMD_STATE%\requests"
-  start "repl.cmd-broker" /b cmd /c ""%~f0" __broker"
+  start "repl.cmd-broker" /b cmd /c ""%~f0" __broker >nul 2>&1"
   >"%REPL_CMD_STATE%\requests\%REQID%.req" echo request-id: %REQID%
 EOF
 }
@@ -259,7 +259,7 @@ if not "%~4"=="" set "REPL_CMD_CMD=%REPL_CMD_CMD% %~4 [and more]"
   echo backend-command: %REPL_CMD_CMD%
   echo state-dir: %REPL_CMD_STATE%
 )
-start "repl.cmd-broker" /b cmd /c ""%~f0" __broker"
+start "repl.cmd-broker" /b cmd /c ""%~f0" __broker >nul 2>&1"
 echo started broker sketch in "%REPL_CMD_STATE%"
 exit /b 0
 
