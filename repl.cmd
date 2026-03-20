@@ -9,7 +9,7 @@ state_dir() {
   if [ "${REPL_CMD_STATE_DIR-}" != "" ]; then
     REPL_CMD_STATE=$REPL_CMD_STATE_DIR
   else
-    REPL_CMD_STATE="${TMPDIR:-/tmp}/repl.cmd-sketch"
+    REPL_CMD_STATE="${TMPDIR:-/tmp}/repl.cmd-state"
   fi
 }
 
@@ -22,7 +22,7 @@ repl.cmd
   repl.cmd stop
   repl.cmd status
 
-This is a protocol and control-flow sketch, not a finished implementation.
+This is a protocol and control-flow scaffold, not a finished implementation.
 EOF
 }
 
@@ -42,7 +42,7 @@ op: eval
 form: $1
 EOF
   printf '%s\n' "queued request $reqid"
-  printf '%s\n' 'sketch only: broker should pick up request, wrap the form with sentinels, and write a response file.'
+  printf '%s\n' 'placeholder only: broker should pick up request, wrap the form with sentinels, and write a response file.'
 }
 
 queue_stop() {
@@ -56,7 +56,7 @@ EOF
 
 broker() {
   state_dir
-  printf 'broker sketch running in "%s"\n\n' "$REPL_CMD_STATE"
+  printf 'broker placeholder running in "%s"\n\n' "$REPL_CMD_STATE"
   cat <<'EOF'
 TODO broker flow:
   1. launch child repl with redirected stdin/stdout/stderr
@@ -90,7 +90,7 @@ case "$cmd" in
     fi
     write_metadata "$repl_cmd"
     sh "$0" __broker >/dev/null 2>&1 &
-    printf 'started broker sketch in "%s"\n' "$REPL_CMD_STATE"
+    printf 'started broker placeholder in "%s"\n' "$REPL_CMD_STATE"
     ;;
   eval)
     state_dir
@@ -135,7 +135,7 @@ echo   repl.cmd eval "(+ 1 2)"
 echo   repl.cmd stop
 echo   repl.cmd status
 echo.
-echo This is a protocol and control-flow sketch, not a finished implementation.
+echo This is a protocol and control-flow scaffold, not a finished implementation.
 exit /b 0
 
 :usage_error
@@ -145,13 +145,13 @@ exit /b 1
 if defined REPL_CMD_STATE_DIR (
   set "REPL_CMD_STATE=%REPL_CMD_STATE_DIR%"
 ) else (
-  set "REPL_CMD_STATE=%TEMP%\repl.cmd-sketch"
+  set "REPL_CMD_STATE=%TEMP%\repl.cmd-state"
 )
 exit /b 0
 
 :broker
 call :state_dir
-echo broker sketch running in "%REPL_CMD_STATE%"
+echo broker placeholder running in "%REPL_CMD_STATE%"
 echo.
 echo TODO broker flow:
 echo   1. launch child repl with redirected stdin/stdout/stderr
@@ -191,7 +191,7 @@ if not "%~4"=="" set "REPL_CMD_CMD=%REPL_CMD_CMD% %~4 [and more]"
   echo state-dir: %REPL_CMD_STATE%
 )
 start "repl.cmd-broker" /b cmd /c ""%~f0" __broker >nul 2>&1"
-echo started broker sketch in "%REPL_CMD_STATE%"
+echo started broker placeholder in "%REPL_CMD_STATE%"
 exit /b 0
 
 :eval
@@ -208,7 +208,7 @@ set "REQID=%RANDOM%%RANDOM%"
   echo form: %~2
 )
 echo queued request %REQID%
-echo sketch only: broker should pick up request, wrap the form with sentinels, and write a response file.
+echo placeholder only: broker should pick up request, wrap the form with sentinels, and write a response file.
 exit /b 0
 
 :stop

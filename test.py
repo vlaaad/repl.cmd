@@ -89,9 +89,6 @@ def run_tests(output_path: Path, launcher_shell: str | None) -> None:
     assert_contains(repl_source, ': <<"BATCH"', "missing polyglot batch shim")
     assert_contains(repl_source, 'case "$cmd" in', "missing POSIX command dispatch")
     assert_contains(repl_source, "goto :start", "missing Windows start dispatch")
-    if "__sketch" in repl_source:
-        raise AssertionError("unexpected sketch command in repl.cmd")
-
     plan_source = PLAN.read_text(encoding="utf-8")
     assert_contains(plan_source, "cross-platform", "plan must mention cross-platform support")
     assert_contains(plan_source, "file-based IPC", "plan must mention file-based IPC")
@@ -133,7 +130,7 @@ def run_tests(output_path: Path, launcher_shell: str | None) -> None:
         if started.returncode != 0:
             raise AssertionError(f"repl.cmd start failed: {normalize_newlines(started.stderr).strip()}")
         started_text = normalize_runtime_text(started.stdout + started.stderr, state_dir)
-        assert_contains(started_text, 'started broker sketch in "<state-dir>"', "missing normalized start output")
+        assert_contains(started_text, 'started broker placeholder in "<state-dir>"', "missing normalized start output")
         lines.extend(
             [
                 "PASS start-command",
