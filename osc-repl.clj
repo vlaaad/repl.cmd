@@ -21,9 +21,7 @@
 ;; 
 
 
-
-(ns osc-repl
-  (:require [clojure.main]))
+(require '[clojure.main])
 
 (def ^:private esc-char (char 27))
 (def ^:private bel-char (char 7))
