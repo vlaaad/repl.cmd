@@ -1,7 +1,7 @@
 # REPL Control Skill Plan
 
 ## Goal
-Build a cross-platform single-entrypoint `repl.cmd` helper that manages a local REPL per exact working directory without network sockets.
+Build a cross-platform single-file `repl.cmd` helper that manages a local REPL per exact working directory without network sockets.
 
 ## UX
 - `repl.cmd start`
@@ -25,6 +25,7 @@ Build a cross-platform single-entrypoint `repl.cmd` helper that manages a local 
 - exact help/usage output across Windows and POSIX entrypoints
 - polyglot script with no extra dependencies: python is ONLY for tests
 - osc-repl.clj is only an inspiration, the real script should be based by it, but only with osc 133, and more concise
+- deliverable: single file and no extra deps beyound what can reasonably be expected on a computer.
 
 ## Architecture
 Start a detached REPL process directly and manage it with a lightweight local session registry.
