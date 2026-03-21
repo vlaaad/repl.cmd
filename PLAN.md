@@ -1,51 +1,45 @@
 # REPL Control Skill Plan
 
 ## Goal
-Build a cross-platform `repl.cmd` helper that manages a local REPL without network sockets.
+Build a cross-platform single-file `repl.cmd` helper that manages a local REPL per working directory without network sockets.
 
 ## UX
 - `repl.cmd start -- <cmd...>`
 - `repl.cmd eval "<form>"`
+- `echo "<form>" | repl.cmd eval`
 - `repl.cmd stop`
-- optional `repl.cmd status`
+- `repl.cmd status`
+- help flags: `repl.cmd -h`, `repl.cmd -?`, `repl.cmd --help`
+- `eval` has a `--timeout <seconds>` option; default is 5 seconds
+- commands always target the REPL associated with the exact current working directory
 
 ## Constraints
 - Windows, macOS, and Linux
 - no TCP
 - `clj` / `lein` agnostic
-- shell-only runtime implementation; tests may require Python in CI/dev
+- shell-only runtime implementation; tests may require Python only in CI/dev
 - one polyglot script with Windows and POSIX branches
+- exact help/usage output across Windows and POSIX entrypoints
 
 ## Architecture
-Use a persistent broker process plus file-based IPC.
+Start a detached REPL process directly and manage it with a lightweight local session registry.
 
-- `repl.cmd` launches the broker and writes request files
-- broker starts the target REPL with redirected `stdin` / `stdout` / `stderr`
-- broker sends wrapped forms to the REPL and waits for explicit end markers
-- broker writes shell-friendly response files
-- broker handles shutdown and cleanup
-
-## Why This Approach
-- redirected stdio is portable; console injection is fragile and Windows-specific
-- file IPC is simpler and more portable than cross-platform named pipes
-- explicit framing markers are more reliable than parsing REPL prompts
+- `repl.cmd start` launches the target REPL as a detached child with redirected `stdin` / `stdout` / `stderr`
+- `repl.cmd` stores session state in `<cwd>/.repl.cmd/`
+- one detached REPL session exists per exact working directory
+- `start` bootstraps `.repl.cmd/` and writes `.repl.cmd/.gitignore` automatically
+- `repl.cmd` stores session metadata locally: pid, cwd, command, started_at, transport paths, and status
+- `eval` writes to the session input, sends marker forms before and after eval, then waits for explicit end markers
+- output is captured in shell-friendly files so later commands can reconnect without a broker
+- `stop` and cleanup operate from the stored session metadata
 
 ## Protocol Sketch
-- temp state dir with broker pid, child pid, lock, requests, responses, logs, metadata
-- request file: id, op (`eval` / `stop` / `status`), payload, timestamp
+- state dir: `<cwd>/.repl.cmd/`
+- `.repl.cmd/.gitignore` contents: `*`
+- request file: id, op (`eval` / `stop` / `status`), payload, timeout, timestamp
 - response file: id, status, stdout, stderr, value or error summary
 - prefer plain text over JSON for shell friendliness
+- session status is `stopped`, `starting`, `running`, or `busy`
 
 ## Open Problems
-- shell escaping for arbitrary forms
-- preserving REPL session state and namespace
-- separating printed output from return value
-- avoiding stderr deadlocks and long-output blocking
-- startup readiness without prompt scraping
-- process-tree termination on Windows and POSIX
-- locking, concurrent eval protection, and crash cleanup
-
-## Delivery Phases
-1. Minimal flow: launcher, broker, piped REPL, single eval, stop
-2. Robustness: framing, timeouts, cleanup, process-tree kill
-3. Polish: status, logs, better formatting, eval from file/stdin
+- concurrent eval protection, crash cleanup, timeout enforcement, and stale session recovery
