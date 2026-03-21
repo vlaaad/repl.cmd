@@ -24,7 +24,7 @@ Build a cross-platform single-file `repl.cmd` helper that manages a local REPL p
 - POSIX branch may be shell-native; Windows branch may delegate runtime work to built-in `powershell.exe`
 - exact help/usage output across Windows and POSIX entrypoints
 - polyglot script with no extra dependencies: python is ONLY for tests
-- osc-repl.clj is only an inspiration, the real script should be based by it, but only with osc 133, and more concise
+- osc-repl.clj is a good inspiration
 - deliverable: single file and no extra deps beyound what can reasonably be expected on a computer.
 
 ## Architecture
