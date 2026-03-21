@@ -20,9 +20,9 @@ Build a cross-platform single-file `repl.cmd` helper that manages a local REPL p
 - Windows, macOS, and Linux
 - no TCP
 - built-in launcher support for `clj` and `lein`, plus fully custom launcher command support
-- one polyglot entry script with Windows and POSIX branches
+- one polyglot script with Windows and POSIX branches
 - POSIX branch may be shell-native; Windows branch may delegate runtime work to built-in `powershell.exe`
-- exact help/usage output across Windows and POSIX entrypoints
+- exact output across Windows and POSIX entrypoints
 - polyglot script with no extra dependencies: python is ONLY for tests
 - osc-repl.clj is a good inspiration
 - deliverable: single file and no extra deps beyound what can reasonably be expected on a computer.
