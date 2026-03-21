@@ -6,11 +6,7 @@ BATCH
 set -eu
 
 state_dir() {
-  if [ "${REPL_CMD_STATE_DIR-}" != "" ]; then
-    REPL_CMD_STATE=$REPL_CMD_STATE_DIR
-  else
-    REPL_CMD_STATE="${TMPDIR:-/tmp}/repl.cmd-state"
-  fi
+  REPL_CMD_STATE="${TMPDIR:-/tmp}/repl.cmd-state"
 }
 
 usage() {
@@ -142,11 +138,7 @@ exit /b 0
 exit /b 1
 
 :state_dir
-if defined REPL_CMD_STATE_DIR (
-  set "REPL_CMD_STATE=%REPL_CMD_STATE_DIR%"
-) else (
-  set "REPL_CMD_STATE=%TEMP%\repl.cmd-state"
-)
+set "REPL_CMD_STATE=%TEMP%\repl.cmd-state"
 exit /b 0
 
 :broker
